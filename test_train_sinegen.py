@@ -6,7 +6,7 @@ import librosa
 import librosa.display
 
 from layers import SineGenerator
-from losses import spectral_amplitude_distance
+from losses import spectral_amplitude_distance, phase_distance
 
 class SqueezeLayer(torch.nn.Module):
     def forward(self, x):
@@ -22,9 +22,11 @@ def main():
     s = SineGenerator(waveform_length)
     l = torch.nn.Linear(8, 1)
     model = torch.nn.Sequential(s, l, SqueezeLayer())
-    criterion = spectral_amplitude_distance(512, 320, 80)
+    Ls = spectral_amplitude_distance(512, 320, 80)
+    Lp = phase_distance(512, 320, 80)
+    criterion = lambda y_pred, y: Ls(y_pred, y) + Lp(y_pred, y)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
-    for t in range(1001):
+    for t in range(501):
         s.natural_waveforms = y
         y_pred = model(x)
 
