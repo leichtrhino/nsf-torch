@@ -35,11 +35,13 @@ def main():
     import librosa
     import librosa.display
     singen = SineGenerator(160000)
+    linear = torch.nn.Linear(8, 1)
     # unsqueeze to make 1x16x1 tensor
     x = torch.cat(
         (torch.zeros(6), 220 * torch.ones(5), 440 * torch.ones(5))
     ).unsqueeze(-1).unsqueeze(0)
-    y = singen.forward(x)
+    y = linear(singen(x))
+    print(x.shape, y.shape)
     '''
     y = np.array(torch.sum(y, -1)[0]) # merge harmonics and squeeze
     D = librosa.amplitude_to_db(np.abs(librosa.stft(y)), ref=np.max)
