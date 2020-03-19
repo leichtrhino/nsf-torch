@@ -19,15 +19,13 @@ def main():
     coeff, bias = torch.randn(8), torch.randn(1)
     y = torch.sum(coeff * SineGenerator(waveform_length)(x), -1) + bias
 
+    s = SineGenerator(waveform_length)
     l = torch.nn.Linear(8, 1)
-    model = torch.nn.Sequential(
-        SineGenerator(waveform_length),
-        l,
-        SqueezeLayer(),
-    )
+    model = torch.nn.Sequential(s, l, SqueezeLayer())
     criterion = spectral_amplitude_distance(512, 320, 80)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
     for t in range(1001):
+        s.natural_waveforms = y
         y_pred = model(x)
 
         # Compute and print loss
