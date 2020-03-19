@@ -12,6 +12,7 @@ class SineGenerator(torch.nn.Module):
         self.noise_mag = 0.003 # magnitude of noise
         self.bins = 64 # the number of random initial phase NOTE: not impl. yet
         self.harmonics = 7 # number of harmonics
+        self.natural_waveforms = None
 
     def forward(self, x):
         # interpolate x (from NxBx1 to NxTx1)
@@ -19,10 +20,25 @@ class SineGenerator(torch.nn.Module):
             x.transpose(1, 2), self.waveform_length
         ).transpose(1, 2)
         h = torch.arange(1, self.harmonics + 2)
-        phi = 2 * pi * torch.rand(1) - pi
         n = torch.normal(
             0, self.noise_mag**2, (self.waveform_length,)
         ).unsqueeze(-1)
+
+        if self.natural_waveforms is not None:
+            # generate candidates of initial phase
+            phis = torch.linspace(-pi, pi, self.bins)
+            # calculate the cross correlation for each initial phase
+            voiced = self.F0_mag * torch.sin(
+                2 * pi * torch.cumsum(f, 1) / self.sr + phis
+            ) + n
+            unvoiced = 1. / (3 * self.noise_mag) * n
+            signals = torch.where(f > 0, voiced, unvoiced)
+            phi_idx = torch.argmax(torch.sum(
+                self.natural_waveforms.unsqueeze(-1) * signals, 1
+            ), 1)
+            phi = phis[phi_idx]
+        else:
+            phi = (torch.rand(x.size(0)) - 0.5) * 2 * pi
         voiced = self.F0_mag * torch.sin(
             h * 2 * pi * torch.cumsum(f, 1) / self.sr + phi
         ) + n
