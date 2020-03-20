@@ -63,35 +63,65 @@ class DiluteBlock(torch.nn.Module):
         x = self.linear2(x)
         return x, x_out_tmp
 
-class PostProcessingBlock(torch.nn.Module):
-    pass
-
 # Causal + Dilute1 + ... + DiluteN + PostProcessing
 class NeuralFilterModule(torch.nn.Module):
-    pass
+    def __init__(self):
+        super(NeuralFilterModule, self).__init__()
+        self.context_size = 64
+        self.dilute_input_size = 64
+        self.dilute_output_size = 128
+        self.causal_linear = torch.nn.Linear(1, self.dilute_input_size)
+        self.dilute_blocks = [
+            DiluteBlock(
+                self.dilute_input_size,
+                self.dilute_output_size,
+                self.context_size, 2**i
+            )
+            for i in range(10)
+        ]
+        self.postoutput_linear1 = torch.nn.Linear(self.dilute_output_size, 16)
+        self.postoutput_linear2 = torch.nn.Linear(16, 2)
+
+    def forward(self, x, c):
+        # x: signal tensor from previous module
+        # c: context tensor
+        x_in = x
+        x = self.causal_linear(x)
+        outputs_from_blocks = []
+        ysum = None
+        for blk in self.dilute_blocks:
+            y, x = blk(x, c)
+            if ysum is None:
+                ysum = y
+            else:
+                ysum += y
+        x = ysum
+        x = self.postoutput_linear1(x)
+        x = self.postoutput_linear2(x)
+        return x_in * torch.exp(x[:, :, 1].unsqueeze(-1)) + x[:, :, 0].unsqueeze(-1)
 
 def main():
-    batch_size = 8
-    waveform_length = 80
+    batch_size = 1
+    waveform_length = 1600
     context_dim = 64
-    input_dim = 64
-    output_dim = 128
+    input_dim = 1
+    output_dim = 1
 
     context_vec = torch.randn(batch_size, waveform_length, context_dim)
     x = torch.randn(batch_size, waveform_length, input_dim)
     y = torch.randn(batch_size, waveform_length, output_dim)
 
-    module = DiluteBlock(input_dim, output_dim, context_dim, 32)
+    module = NeuralFilterModule()
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(module.parameters(), lr=1e-4)
 
     for t in range(501):
-        y_pred, x_next_block = module(x, context_vec)
+        y_pred = module(x, context_vec)
 
         # Compute and print loss
         loss = criterion(y_pred, y)
         if t % 100 == 0:
-            print(t, loss.item(), x.shape, x_next_block.shape)
+            print(t, loss.item(), x.shape)
 
         # Zero gradients, perform a backward pass, and update the weights.
         optimizer.zero_grad()
