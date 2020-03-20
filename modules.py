@@ -1,5 +1,7 @@
 import torch
 
+from layers import SineGenerator
+
 class ConditionModule(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(ConditionModule, self).__init__()
@@ -19,8 +21,17 @@ class ConditionModule(torch.nn.Module):
         x = self.cnn(x.permute(0, 2, 1)).permute(0, 2, 1)
         return torch.cat((F0, x), dim=-1)
 
+# input: NxBx1
+# output: NxTx1
 class SourceModule(torch.nn.Module):
-    pass
+    def __init__(self, waveform_length):
+        super(SourceModule, self).__init__()
+        self.sine_generator = SineGenerator(waveform_length)
+        self.linear = torch.nn.Linear(8, 1)
+    def forward(self, x):
+        x = self.sine_generator(x)
+        x = self.linear(x)
+        return torch.squeeze(x, -1)
 
 class CausalBlock(torch.nn.Module):
     pass
