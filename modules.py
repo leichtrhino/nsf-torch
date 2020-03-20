@@ -33,9 +33,6 @@ class SourceModule(torch.nn.Module):
         x = self.linear(x)
         return torch.squeeze(x, -1)
 
-class CausalBlock(torch.nn.Module):
-    pass
-
 class DiluteBlock(torch.nn.Module):
     pass
 
