@@ -10,10 +10,9 @@ class ConditionModule(torch.nn.Module):
         self.input_size = input_size
         self.output_size = output_size
         self.hidden_size = hidden_size
-        # NOTE: since the nan error occurs, RNN is used in this implementation
-        self.bilstm = torch.nn.RNN(
+        self.bilstm = torch.nn.LSTM(
             input_size=input_size, hidden_size=hidden_size // 2,
-            bidirectional=True
+            batch_first=True, bidirectional=True
         )
         self.cnn = torch.nn.Conv1d(
             in_channels=hidden_size, out_channels=output_size-1, kernel_size=1
@@ -22,13 +21,7 @@ class ConditionModule(torch.nn.Module):
 
     def forward(self, x):
         F0 = x[:, :, 0].unsqueeze(dim=-1)
-        if self.bilstm_hidden is None:
-            self.bilstm_hidden = (
-                torch.randn(2, x.shape[0], self.hidden_size // 2)
-            )
-        x = x.transpose(0, 1)
-        x, self.bilstm_hidden = self.bilstm(x, self.bilstm_hidden)
-        x = x.transpose(0, 1)
+        x, _ = self.bilstm(x)
         x = torch.tanh(self.cnn(x.permute(0, 2, 1)).permute(0, 2, 1))
         return torch.cat((F0, x), dim=-1)
 
