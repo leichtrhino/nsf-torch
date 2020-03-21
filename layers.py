@@ -10,7 +10,7 @@ class SineGenerator(torch.nn.Module):
         self.sr = 16000 # sampling rate
         self.F0_mag = 0.1 # magnitude of the sine waves
         self.noise_mag = 0.003 # magnitude of noise
-        self.bins = 64 # the number of random initial phase NOTE: not impl. yet
+        self.bins = 64 # the number of random initial phase
         self.harmonics = 7 # number of harmonics
         self.natural_waveforms = None
 
