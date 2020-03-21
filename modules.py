@@ -6,17 +6,17 @@ from layers import WaveNetCore
 class ConditionModule(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(ConditionModule, self).__init__()
-        hidden_size = 32
+        hidden_size = 64
         self.input_size = input_size
         self.output_size = output_size
         self.hidden_size = hidden_size
         # NOTE: since the nan error occurs, RNN is used in this implementation
         self.bilstm = torch.nn.RNN(
-            input_size=input_size, hidden_size=hidden_size,
+            input_size=input_size, hidden_size=hidden_size // 2,
             bidirectional=True
         )
         self.cnn = torch.nn.Conv1d(
-            in_channels=64, out_channels=output_size-1, kernel_size=1
+            in_channels=hidden_size, out_channels=output_size-1, kernel_size=1
         )
         self.bilstm_hidden = None
 
@@ -24,7 +24,7 @@ class ConditionModule(torch.nn.Module):
         F0 = x[:, :, 0].unsqueeze(dim=-1)
         if self.bilstm_hidden is None:
             self.bilstm_hidden = (
-                torch.randn(2, x.shape[0], self.hidden_size)
+                torch.randn(2, x.shape[0], self.hidden_size // 2)
             )
         x = x.transpose(0, 1)
         x, self.bilstm_hidden = self.bilstm(x, self.bilstm_hidden)
@@ -41,7 +41,7 @@ class SourceModule(torch.nn.Module):
         self.linear = torch.nn.Linear(8, 1)
     def forward(self, x):
         x = self.sine_generator(x)
-        x = self.linear(x)
+        x = torch.tanh(self.linear(x))
         return torch.squeeze(x, -1)
 
 # input: NxTxinput_size, NxTxcontext_size
