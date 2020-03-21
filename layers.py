@@ -19,7 +19,7 @@ class SineGenerator(torch.nn.Module):
         f = torch.nn.functional.interpolate(
             x.transpose(1, 2), self.waveform_length
         ).transpose(1, 2)
-        h = torch.arange(1, self.harmonics + 2)
+        h = torch.arange(1, self.harmonics + 2).unsqueeze(0).unsqueeze(0)
         n = torch.normal(
             0, self.noise_mag**2, (self.waveform_length,)
         ).unsqueeze(-1)
@@ -39,6 +39,7 @@ class SineGenerator(torch.nn.Module):
             phi = phis[phi_idx]
         else:
             phi = (torch.rand(x.size(0)) - 0.5) * 2 * pi
+        phi = phi.unsqueeze(-1).unsqueeze(-1)
         voiced = self.F0_mag * torch.sin(
             h * 2 * pi * torch.cumsum(f, 1) / self.sr + phi
         ) + n
