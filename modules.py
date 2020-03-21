@@ -62,7 +62,7 @@ class DiluteBlock(torch.nn.Module):
         x = torch.tanh(
             self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-self.dilation, :]
         )
-        x = self.wavenet_core(torch.cat((c, x), dim=-1))
+        x = self.wavenet_core(x, c)
         x_out_tmp = torch.tanh(self.linear1(x))
         x = x_in_tmp + x_out_tmp
         x = torch.tanh(self.linear2(x))

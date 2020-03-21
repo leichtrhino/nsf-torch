@@ -53,21 +53,13 @@ class WaveNetCore(torch.nn.Module):
         super(WaveNetCore, self).__init__()
         self.context_dim = context_dim
         self.output_dim = output_dim
-        if context_dim > 0:
-            self.weight = torch.nn.Parameter(
-                torch.randn(context_dim, 2 * output_dim)
-            )
-        else:
-            self.weight = None
+        self.weight = torch.nn.Parameter(
+            torch.randn(context_dim, 2 * output_dim)
+        )
 
-    def forward(self, x):
-        if self.context_dim > 0:
-            context = x[:, :, :self.context_dim]
-            weight_context = torch.matmul(context, self.weight)
-        else:
-            weight_context = torch.zeros(1)
-        inputs = x[:, :, self.context_dim:]
-        h = inputs + torch.tanh(weight_context)
+    def forward(self, x, c):
+        weight_context = torch.matmul(c, self.weight)
+        h = x + torch.tanh(weight_context)
         h1 = h[:, :, :self.output_dim]
         h2 = h[:, :, self.output_dim:]
         return torch.tanh(h1) * torch.sigmoid(h2)
