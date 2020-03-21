@@ -10,7 +10,8 @@ class ConditionModule(torch.nn.Module):
         self.input_size = input_size
         self.output_size = output_size
         self.hidden_size = hidden_size
-        self.bilstm = torch.nn.LSTM(
+        # NOTE: since the nan error occurs, RNN is used in this implementation
+        self.bilstm = torch.nn.RNN(
             input_size=input_size, hidden_size=hidden_size,
             bidirectional=True
         )
@@ -23,13 +24,12 @@ class ConditionModule(torch.nn.Module):
         F0 = x[:, :, 0].unsqueeze(dim=-1)
         if self.bilstm_hidden is None:
             self.bilstm_hidden = (
-                torch.randn(2, x.shape[0], self.hidden_size),
                 torch.randn(2, x.shape[0], self.hidden_size)
             )
         x = x.transpose(0, 1)
         x, self.bilstm_hidden = self.bilstm(x, self.bilstm_hidden)
         x = x.transpose(0, 1)
-        x = self.cnn(x.permute(0, 2, 1)).permute(0, 2, 1)
+        x = torch.tanh(self.cnn(x.permute(0, 2, 1)).permute(0, 2, 1))
         return torch.cat((F0, x), dim=-1)
 
 # input: NxBx1
@@ -66,11 +66,13 @@ class DiluteBlock(torch.nn.Module):
         # x: output of the previous dilute block
         # c: context vector for wavenetcore
         x_in_tmp = x
-        x = self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-self.dilation, :]
+        x = torch.tanh(
+            self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-self.dilation, :]
+        )
         x = self.wavenet_core(torch.cat((c, x), dim=-1))
-        x = x_out_tmp = self.linear1(x)
-        x += x_in_tmp
-        x = self.linear2(x)
+        x_out_tmp = torch.tanh(self.linear1(x))
+        x = x_in_tmp + x_out_tmp
+        x = torch.tanh(self.linear2(x))
         return x, x_out_tmp
 
 # Causal + Dilute1 + ... + DiluteN + PostProcessing
@@ -90,13 +92,15 @@ class NeuralFilterModule(torch.nn.Module):
             for i in range(10)
         ]
         self.postoutput_linear1 = torch.nn.Linear(self.dilute_output_size, 16)
+        self.postoutput_batchnorm1 = torch.nn.BatchNorm1d(16)
         self.postoutput_linear2 = torch.nn.Linear(16, 2)
+        self.postoutput_batchnorm2 = torch.nn.BatchNorm1d(2)
 
     def forward(self, x, c):
         # x: signal tensor from previous module
         # c: context tensor
         x_in = x
-        x = self.causal_linear(x)
+        x = torch.tanh(self.causal_linear(x))
         outputs_from_blocks = []
         ysum = None
         for blk in self.dilute_blocks:
@@ -104,10 +108,18 @@ class NeuralFilterModule(torch.nn.Module):
             if ysum is None:
                 ysum = y
             else:
-                ysum += y
+                ysum = y + ysum
         x = ysum
-        x = self.postoutput_linear1(x)
-        x = self.postoutput_linear2(x)
+        x = torch.tanh(
+            self.postoutput_batchnorm1(
+                self.postoutput_linear1(x).transpose(1, 2)
+            ).transpose(1, 2)
+        )
+        x = torch.tanh(
+            self.postoutput_batchnorm2(
+                self.postoutput_linear2(x).transpose(1, 2)
+            ).transpose(1, 2)
+        )
         return x_in * torch.exp(x[:, :, 1].unsqueeze(-1)) + x[:, :, 0].unsqueeze(-1)
 
 def main():
