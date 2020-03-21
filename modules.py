@@ -6,19 +6,29 @@ from layers import WaveNetCore
 class ConditionModule(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(ConditionModule, self).__init__()
+        hidden_size = 32
         self.input_size = input_size
         self.output_size = output_size
+        self.hidden_size = hidden_size
         self.bilstm = torch.nn.LSTM(
-            input_size=input_size, hidden_size=32,
-            batch_first=True, bidirectional=True
+            input_size=input_size, hidden_size=hidden_size,
+            bidirectional=True
         )
         self.cnn = torch.nn.Conv1d(
             in_channels=64, out_channels=output_size-1, kernel_size=1
         )
+        self.bilstm_hidden = None
 
     def forward(self, x):
         F0 = x[:, :, 0].unsqueeze(dim=-1)
-        x, _ = self.bilstm(x) # NOTE: this ignores hidden states
+        if self.bilstm_hidden is None:
+            self.bilstm_hidden = (
+                torch.randn(2, x.shape[0], self.hidden_size),
+                torch.randn(2, x.shape[0], self.hidden_size)
+            )
+        x = x.transpose(0, 1)
+        x, self.bilstm_hidden = self.bilstm(x, self.bilstm_hidden)
+        x = x.transpose(0, 1)
         x = self.cnn(x.permute(0, 2, 1)).permute(0, 2, 1)
         return torch.cat((F0, x), dim=-1)
 
