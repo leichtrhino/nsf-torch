@@ -49,8 +49,8 @@ class DiluteBlock(torch.nn.Module):
         self.dilation = dilation
         # padding=dilation makes the cnn causal (on kernel_size=2)
         self.cnn = torch.nn.Conv1d(
-            input_size, output_size // 2, 2,
-            dilation=dilation, padding=dilation, bias=True
+            input_size, output_size // 2, 3,
+            dilation=dilation, padding=2*dilation, bias=True
         )
         self.wavenet_core = WaveNetCore(context_size, output_size // 4)
         self.linear1 = torch.nn.Linear(output_size // 4, output_size // 2)
@@ -60,7 +60,7 @@ class DiluteBlock(torch.nn.Module):
         # c: context vector for wavenetcore
         x_in_tmp = x
         x = torch.tanh(
-            self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-self.dilation, :]
+            self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-2*self.dilation, :]
         )
         x = self.wavenet_core(x, c)
         x_out_tmp = torch.tanh(self.linear1(x))
