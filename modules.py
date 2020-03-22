@@ -95,13 +95,10 @@ class NeuralFilterModule(torch.nn.Module):
         x_in = x
         x = torch.tanh(self.causal_linear(x))
         outputs_from_blocks = []
-        ysum = None
+        ysum = 0
         for blk in self.dilute_blocks:
             y, x = blk(x, c)
-            if ysum is None:
-                ysum = y
-            else:
-                ysum = y + ysum
+            ysum = y + ysum
         x = ysum
         x = torch.tanh(
             self.postoutput_batchnorm1(
