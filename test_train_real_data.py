@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import librosa
 import torch
 
@@ -49,7 +50,7 @@ def generate_data():
 
     F0_segments = []
     wav_segments = []
-    for utt_label in set(wav_dict.keys()).intersection(set(F0_dict.keys())):
+    for utt_label in sorted(set(wav_dict.keys()) & set(F0_dict.keys())):
         F0 = F0_dict[utt_label]
         y = wav_dict[utt_label][:(F0.size - 1) * frame_shift + frame_length]
         # align with the segment
@@ -94,6 +95,8 @@ def main():
 
     #with autograd.detect_anomaly():
     for epoch in range(100):
+        sum_loss = 0
+        last_output = ''
         for step, (x, y) in enumerate(generate_data()):
             # TODO: match dimension
             y = y.squeeze(-1)
@@ -102,16 +105,26 @@ def main():
 
             # Compute and print loss
             loss = criterion(y_pred, y)
-            print('epoch', epoch, 'step', step, loss.item())
+            sum_loss += loss.item() * batch_size
+            curr_output = f'\repoch {epoch} step {step} loss={sum_loss / (batch_size*(step+1))}'
+            whitespace = '' if len(curr_output) >= len(last_output)\
+                else ' ' * (len(last_output) - len(curr_output))
+            sys.stdout.write(curr_output + whitespace)
+            sys.stdout.flush()
+            last_output = curr_output
             # Zero gradients, perform a backward pass, and update the weights.
-            optimizer.zero_grad()
             loss.backward(retain_graph=True)
             optimizer.step()
+            optimizer.zero_grad()
 
-            torch.save(
-                model.state_dict(),
-                f'model_epoch{epoch}_step{step}_loss{loss.item()}.pth'
-            )
+        curr_output = f'\repoch {epoch} loss={sum_loss / (batch_size*(step+1))}'
+        whitespace = '' if len(curr_output) >= len(last_output)\
+            else ' ' * (len(last_output) - len(curr_output))
+        print(curr_output + whitespace)
+        torch.save(
+            model.state_dict(),
+            f'model_epoch{epoch}.pth'
+        )
 
 if __name__ == '__main__':
     main()
