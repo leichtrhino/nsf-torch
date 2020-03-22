@@ -16,7 +16,7 @@ def spectral_amplitude_distance(dft_bins, frame_length, frame_shift):
                     min=torch.finfo(Y.dtype).eps
                 )
             )**2
-        )
+        ) / x.shape[0]
     return _distance
 
 def phase_distance(dft_bins, frame_length, frame_shift):
@@ -29,5 +29,5 @@ def phase_distance(dft_bins, frame_length, frame_shift):
                 ((X[:,:,0]**2+X[:,:,1]**2)*(Y[:,:,0]**2+Y[:,:,1]**2)),
                 min=torch.finfo(X.dtype).eps
             ))
-        )
+        ) / x.shape[0]
     return _distance
