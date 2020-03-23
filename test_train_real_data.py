@@ -32,6 +32,16 @@ def generate_data():
         utt_label = os.path.splitext(os.path.split(wav_file)[1])[0]
         wav_dict[utt_label] = y
 
+    '''
+    obtained by:
+    compute-kaldi-pitch-feats --sample-frequency=16000\
+        scp:wav.scp ark,t:feats.txt
+    contents of wav.scp:
+    utt_001 <full path to utt_001.wav>
+    utt_002 <full path to utt_002.wav>
+    utt_003 <full path to utt_003.wav>
+    ...
+    '''
     F0_file = os.path.expanduser('~/Desktop/arai_feats.txt')
     F0_dict = dict()
     with open(F0_file, 'r') as fp:
