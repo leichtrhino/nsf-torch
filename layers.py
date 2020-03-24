@@ -59,7 +59,7 @@ class WaveNetCore(torch.nn.Module):
 
     def forward(self, x, c):
         weight_context = torch.matmul(c, self.weight)
-        h = x + torch.tanh(weight_context)
+        h = x + weight_context
         h1 = h[:, :, :self.output_dim]
         h2 = h[:, :, self.output_dim:]
         return torch.tanh(h1) * torch.sigmoid(h2)

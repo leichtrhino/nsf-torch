@@ -59,14 +59,11 @@ class DiluteBlock(torch.nn.Module):
         # x: output of the previous dilute block
         # c: context vector for wavenetcore
         x_in_tmp = x
-        x = torch.tanh(
-            self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-2*self.dilation, :]
-        )
+        x = self.cnn(x.transpose(1, 2)).transpose(1, 2)[:, :-2*self.dilation, :]
         x = self.wavenet_core(x, c)
-        x_out_tmp = torch.tanh(self.linear1(x))
-        x = x_in_tmp + x_out_tmp
-        x = torch.tanh(self.linear2(x))
-        return x, x_out_tmp
+        x = torch.tanh(self.linear1(x))
+        x = x + x_in_tmp
+        return x, torch.tanh(self.linear2(x))
 
 # Causal + Dilute1 + ... + DiluteN + PostProcessing
 class NeuralFilterModule(torch.nn.Module):
@@ -97,7 +94,7 @@ class NeuralFilterModule(torch.nn.Module):
         outputs_from_blocks = []
         ysum = 0
         for blk in self.dilute_blocks:
-            y, x = blk(x, c)
+            x, y = blk(x, c)
             ysum = y + ysum
         x = ysum
         x = torch.tanh(
