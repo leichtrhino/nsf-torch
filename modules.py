@@ -96,7 +96,7 @@ class NeuralFilterModule(torch.nn.Module):
         for blk in self.dilute_blocks:
             x, y = blk(x, c)
             ysum = y + ysum
-        x = ysum
+        x = 0.01 * ysum
         x = torch.tanh(
             self.postoutput_batchnorm1(
                 self.postoutput_linear1(x).transpose(1, 2)
