@@ -16,8 +16,8 @@ sampling_rate = 16000
 frame_length = sampling_rate * 25 // 1000
 frame_shift = sampling_rate * 10 // 1000
 
-batch_size = 16
-waveform_length = 4000
+batch_size = 1
+waveform_length = 16000
 context_length = ceil(waveform_length / sampling_rate / (10 / 1000))
 input_dim = 81
 output_dim = 1
@@ -98,9 +98,16 @@ def generate_data():
 
 def main():
     model = NSFModel(input_dim, waveform_length)
-    Ls = spectral_amplitude_distance(512, 320, 80)
-    Lp = phase_distance(512, 320, 80)
-    criterion = lambda y_pred, y: Ls(y_pred, y) + Lp(y_pred, y)
+    loss_functions = []
+    for dft_bins, frame_length, frame_shift in [
+        (512, 320, 80), # for Ls1 and Lp1
+        (128, 80, 40), # for Ls2 and Lp2
+        (2048, 1920, 640), # for Ls3 and Lp3
+    ]:
+        Ls = spectral_amplitude_distance(dft_bins, frame_length, frame_shift)
+        Lp = phase_distance(dft_bins, frame_length, frame_shift)
+        loss_functions.extend([Ls, Lp])
+    criterion = lambda y_pred, y: sum(L(y_pred, y) for L in loss_functions)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
 
     #with autograd.detect_anomaly():
