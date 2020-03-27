@@ -73,14 +73,14 @@ class NeuralFilterModule(torch.nn.Module):
         self.dilute_input_size = 64
         self.dilute_output_size = 128
         self.causal_linear = torch.nn.Linear(1, self.dilute_input_size)
-        self.dilute_blocks = [
+        self.dilute_blocks = torch.nn.ModuleList(
             DiluteBlock(
                 self.dilute_input_size,
                 self.dilute_output_size,
                 self.context_size, 2**i
             )
             for i in range(10)
-        ]
+        )
         self.postoutput_linear1 = torch.nn.Linear(self.dilute_output_size, 16)
         self.postoutput_batchnorm1 = torch.nn.BatchNorm1d(16)
         self.postoutput_linear2 = torch.nn.Linear(16, 2)

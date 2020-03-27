@@ -13,10 +13,10 @@ class NSFModel(torch.nn.Module):
         self.waveform_length = waveform_length
         self.condition_module = ConditionModule(input_size, 64)
         self.source_module = SourceModule(waveform_length)
-        self.neural_filter_modules = [
+        self.neural_filter_modules = torch.nn.ModuleList(
             NeuralFilterModule()
             for _ in range(5)
-        ]
+        )
 
     def forward(self, x):
         F0 = x[:, :, 0].unsqueeze(-1)
