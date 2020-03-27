@@ -108,34 +108,3 @@ class NeuralFilterModule(torch.nn.Module):
             ).transpose(1, 2)
         )
         return x_in * torch.exp(x[:, :, 1].unsqueeze(-1)) + x[:, :, 0].unsqueeze(-1)
-
-def main():
-    batch_size = 1
-    waveform_length = 1600
-    context_dim = 64
-    input_dim = 1
-    output_dim = 1
-
-    context_vec = torch.randn(batch_size, waveform_length, context_dim)
-    x = torch.randn(batch_size, waveform_length, input_dim)
-    y = torch.randn(batch_size, waveform_length, output_dim)
-
-    module = NeuralFilterModule()
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(module.parameters(), lr=1e-4)
-
-    for t in range(501):
-        y_pred = module(x, context_vec)
-
-        # Compute and print loss
-        loss = criterion(y_pred, y)
-        if t % 100 == 0:
-            print(t, loss.item(), x.shape)
-
-        # Zero gradients, perform a backward pass, and update the weights.
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-if __name__ == '__main__':
-    main()
