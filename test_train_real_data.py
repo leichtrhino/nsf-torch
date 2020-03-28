@@ -16,7 +16,7 @@ sampling_rate = 16000
 frame_length = sampling_rate * 25 // 1000
 frame_shift = sampling_rate * 10 // 1000
 
-batch_size = 1
+batch_size = 4
 waveform_length = 16000
 context_length = ceil(waveform_length / sampling_rate / (10 / 1000))
 input_dim = 81
@@ -108,7 +108,7 @@ def main():
         Lp = phase_distance(dft_bins, frame_length, frame_shift)
         loss_functions.extend([Ls, Lp])
     criterion = lambda y_pred, y: sum(L(y_pred, y) for L in loss_functions)
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     #with autograd.detect_anomaly():
     for epoch in range(100):
@@ -130,7 +130,7 @@ def main():
             sys.stdout.flush()
             last_output = curr_output
             # Zero gradients, perform a backward pass, and update the weights.
-            loss.backward(retain_graph=True)
+            loss.backward()
             optimizer.step()
             optimizer.zero_grad()
 
