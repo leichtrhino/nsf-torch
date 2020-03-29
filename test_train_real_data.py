@@ -16,7 +16,7 @@ sampling_rate = 16000
 frame_length = sampling_rate * 25 // 1000
 frame_shift = sampling_rate * 10 // 1000
 
-batch_size = 4
+batch_size = 8
 waveform_length = 16000
 context_length = ceil(waveform_length / sampling_rate / (10 / 1000))
 input_dim = 81
@@ -113,31 +113,40 @@ def main():
     #with autograd.detect_anomaly():
     for epoch in range(100):
         sum_loss = 0
-        last_output = ''
+        last_output_len = 0
         for step, (x, y) in enumerate(generate_data()):
             # TODO: match dimension
             y = y.squeeze(-1)
             model.source_module.sine_generator.natural_waveforms = y
             y_pred = model(x).squeeze(-1)
 
-            # Compute and print loss
+            # Compute loss
             loss = criterion(y_pred, y)
             sum_loss += loss.item() * batch_size
-            curr_output = f'\repoch {epoch} step {step} loss={sum_loss / (batch_size*(step+1))}'
-            whitespace = '' if len(curr_output) >= len(last_output)\
-                else ' ' * (len(last_output) - len(curr_output))
-            sys.stdout.write(curr_output + whitespace)
-            sys.stdout.flush()
-            last_output = curr_output
+            ave_loss = sum_loss / (batch_size*(step+1))
+
             # Zero gradients, perform a backward pass, and update the weights.
             loss.backward()
             optimizer.step()
+            sum_grad = sum(
+                torch.sum(torch.abs(p.grad))
+                for p in model.parameters() if p.grad is not None
+            )
             optimizer.zero_grad()
 
-        curr_output = f'\repoch {epoch} loss={sum_loss / (batch_size*(step+1))}'
-        whitespace = '' if len(curr_output) >= len(last_output)\
-            else ' ' * (len(last_output) - len(curr_output))
-        print(curr_output + whitespace)
+            # Print learning statistics
+            curr_output =\
+                f'\repoch {epoch} step {step} loss={ave_loss} grad={sum_grad}'
+            sys.stdout.write('\r' + ' ' * last_output_len)
+            sys.stdout.write(curr_output)
+            sys.stdout.flush()
+            last_output_len = len(curr_output)
+
+        curr_output =\
+            f'\repoch {epoch} loss={ave_loss}'
+        sys.stdout.write('\r' + ' ' * last_output_len)
+        sys.stdout.write(f'\repoch {epoch} loss={ave_loss}\n')
+
         torch.save(
             model.state_dict(),
             f'model_epoch{epoch}.pth'
