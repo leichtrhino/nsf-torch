@@ -98,6 +98,7 @@ def generate_data():
 
 def main():
     model = NSFModel(input_dim, waveform_length)
+    model.load_state_dict(torch.load('model_epoch99.pth'))
     loss_functions = []
     for dft_bins, frame_length, frame_shift in [
         (512, 320, 80), # for Ls1 and Lp1
@@ -111,7 +112,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     #with autograd.detect_anomaly():
-    for epoch in range(100):
+    for epoch in range(100, 200):
         sum_loss = 0
         last_output_len = 0
         for step, (x, y) in enumerate(generate_data()):
