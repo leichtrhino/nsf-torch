@@ -1,6 +1,7 @@
 # nsf-torch
 
 This is an unofficial implementation of [neural source-filter model][^1] proposed by Wang et al.
+The original implementation is [project-CURRENNT][^2].
 The model takes sequences of fundamental frequency also called F0 and sequences of context vectors which appears in the WaveNet model.
 
 ### Requirments
@@ -12,7 +13,6 @@ The model takes sequences of fundamental frequency also called F0 and sequences 
 ### Usage
 
 This section describes how to train the model and generate waveforms by the model.
-I also describe the usage of two test scrips named `test_train_real_data.py` and `test_generate_fake_data.py` (TBA).
 
 #### Training
 
@@ -44,12 +44,18 @@ criterion = lambda y_pred, y: Ls(y_pred, y) + Lp(y_pred, y)
 # Optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-# Data generator
+# Simple data generator
 def generate_data():
     for batch in range(16):
+        # preparing the F0 and context vectors
+        # to extract F0 from real data, using `compute-kaldi-pitch-feats` might by helpful
+        # to extract context vectors (e.g. MFCC), please refer to https://kaldi-asr.org/doc/feat.html
+        # the followings are just showing the shapes of input tensors
         F0 = torch.Tensor(batch_size, context_length, 1)
         c = torch.Tensor(batch_size, context_length, input_dim - 1)
+        # Note: in the original implementation, F0 comes last but this follows the paper
         x = torch.cat((F0, c), -1)
+        # preparing the natural waveforms: the following is just showing the shape
         y = torch.Tensor(batch_size, waveform_length)
         yield x, y
 
@@ -68,9 +74,15 @@ for epoch in range(100):
         optimizer.zero_grad()
 ```
 
-#### Using `test_train_real_data.py` and `test_generate_fake_data.py`
+#### Generating waveforms
 
-TBA
+Generating waveforms is done by giving a batch of sequences of fundamental frequency and lists of context vectors.
+
+```
+# Importing, defining some constants, loading models, prepare F0 and context vectors...
+# x: (F0, context_vectors) in the previous subsection
+y_pred = model(x)
+```
 
 ### TODO
 
@@ -78,3 +90,4 @@ TBA
 * make it a library (if it is combinient)
 
 [^1]: https://nii-yamagishilab.github.io/samples-nsf/
+[^2]: https://github.com/nii-yamagishilab/project-CURRENNT-scripts
