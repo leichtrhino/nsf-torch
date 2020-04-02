@@ -78,10 +78,11 @@ for epoch in range(100):
 
 Generating waveforms is done by giving a batch of sequences of fundamental frequency and lists of context vectors.
 
-```
+```python
 # Importing, defining some constants, loading models, prepare F0 and context vectors...
 # x: (F0, context_vectors) in the previous subsection
-y_pred = model(x)
+y_pred = model(x).squeeze(-1).detach().numpy().reshape(batch_size*waveform_length)
+librosa.output.write_wav('predicted_waveform.wav', y_pred, sr=sampling_rate)
 ```
 
 ### TODO
