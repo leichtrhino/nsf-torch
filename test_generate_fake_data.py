@@ -2,6 +2,7 @@
 
 import os
 import librosa
+import random
 import torch
 import numpy as np
 
@@ -38,7 +39,9 @@ def generate_data():
                 F0_dict[current_label] = np.array(F0_dict[current_label])
 
     F0_segments = []
-    for utt_label in sorted(F0_dict.keys()):
+    keys = list(F0_dict.keys())
+    random.shuffle(keys)
+    for utt_label in sorted(keys):
         F0 = F0_dict[utt_label]
         # align with the segment
         n_segments = int(ceil(F0.size / context_length))
