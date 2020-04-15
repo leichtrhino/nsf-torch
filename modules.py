@@ -32,8 +32,8 @@ class SourceModule(torch.nn.Module):
         super(SourceModule, self).__init__()
         self.sine_generator = SineGenerator(waveform_length)
         self.linear = torch.nn.Linear(8, 1)
-    def forward(self, x):
-        x = self.sine_generator(x)
+    def forward(self, x, y=None):
+        x = self.sine_generator(x, y)
         x = torch.tanh(self.linear(x))
         return torch.squeeze(x, -1)
 

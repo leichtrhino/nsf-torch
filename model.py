@@ -18,13 +18,13 @@ class NSFModel(torch.nn.Module):
             for _ in range(5)
         )
 
-    def forward(self, x):
+    def forward(self, x, y=None):
         F0 = x[:, :, 0]
         out_condition = self.condition_module(x)
         out_condition = torch.nn.functional.interpolate(
             out_condition.transpose(1, 2), self.waveform_length
         ).transpose(1, 2)
-        out_source = self.source_module(F0)
+        out_source = self.source_module(F0, y)
         out_filter = out_source
         for m in self.neural_filter_modules:
             out_filter = m(out_filter, out_condition)
