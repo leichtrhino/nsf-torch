@@ -13,7 +13,7 @@ def main():
     output_dim = 1
 
     x = torch.randn(batch_size, context_length, input_dim)
-    y = torch.randn(batch_size, waveform_length, output_dim)
+    y = torch.randn(batch_size, waveform_length)
 
     model = NSFModel(input_dim, waveform_length)
     Ls = spectral_amplitude_distance(512, 320, 80)
@@ -22,13 +22,13 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
 
     for t in range(101):
-        # TODO: match dimension
-        model.source_module.sine_generator.natural_waveforms = y.squeeze(-1)
+        # TODO: mark deprecated
+        model.source_module.sine_generator.natural_waveforms = y
         y_pred = model(x)
 
         # Compute and print loss
         # TODO: match dimension
-        loss = criterion(y_pred.squeeze(-1), y.squeeze(-1))
+        loss = criterion(y_pred, y)
         if t % 10 == 0:
             print(t, loss.item())
 

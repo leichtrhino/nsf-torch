@@ -116,10 +116,9 @@ def main():
         sum_loss = 0
         last_output_len = 0
         for step, (x, y) in enumerate(generate_data()):
-            # TODO: match dimension
-            y = y.squeeze(-1)
+            # TODO: mark deprecated
             model.source_module.sine_generator.natural_waveforms = y
-            y_pred = model(x).squeeze(-1)
+            y_pred = model(x)
 
             # Compute loss
             loss = criterion(y_pred, y)

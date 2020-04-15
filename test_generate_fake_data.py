@@ -71,7 +71,7 @@ def main():
     model.load_state_dict(torch.load(statedict_path))
 
     x = next(generate_data())
-    y_pred = model(x).squeeze(-1).detach().numpy().reshape(batch_size*waveform_length)
+    y_pred = model(x).detach().numpy().reshape(batch_size*waveform_length)
     librosa.output.write_wav('arai_fake.wav', y_pred, sr=sampling_rate)
 
 if __name__ == '__main__':
