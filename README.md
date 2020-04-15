@@ -62,10 +62,9 @@ def generate_data():
 # Training procedure
 for epoch in range(100):
     for step, (x, y) in enumerate(generate_data()):
-        # Setting the natural waveform to estimate the best initial phase
-        model.source_module.sine_generator.natural_waveforms = y
         # Make a predicted waveform
-        y_pred = model(x).squeeze(-1)
+        # passing the natural waveform (y) to estimate the best initial phase
+        y_pred = model(x, y)
         # Compute loss
         loss = criterion(y_pred, y)
         # Update weight
@@ -81,14 +80,14 @@ Generating waveforms is done by giving a batch of sequences of fundamental frequ
 ```python
 # Importing, defining some constants, loading models, prepare F0 and context vectors...
 # x: (F0, context_vectors) in the previous subsection
-y_pred = model(x).squeeze(-1).detach().numpy().reshape(batch_size*waveform_length)
+y_pred = model(x).detach().numpy().reshape(batch_size*waveform_length)
 librosa.output.write_wav('predicted_waveform.wav', y_pred, sr=sampling_rate)
 ```
 
 ### TODO
 
 * documentation
-* make it a library (if it is combinient)
+* make it a library (if it is convenient)
 
 [^1]: https://nii-yamagishilab.github.io/samples-nsf/
 [^2]: https://github.com/nii-yamagishilab/project-CURRENNT-scripts
