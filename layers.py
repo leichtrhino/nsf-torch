@@ -1,7 +1,7 @@
 import torch
 from math import pi
 
-# input shape: NxBx1
+# input shape: NxB
 # output shape: NxTx(1+harmonics)
 class SineGenerator(torch.nn.Module):
     def __init__(self, waveform_length):
@@ -17,7 +17,7 @@ class SineGenerator(torch.nn.Module):
     def forward(self, x):
         # interpolate x (from NxBx1 to NxTx1)
         f = torch.nn.functional.interpolate(
-            x.transpose(1, 2), self.waveform_length
+            x.unsqueeze(-1).transpose(1, 2), self.waveform_length
         ).transpose(1, 2)
         h = torch.arange(1, self.harmonics + 2).unsqueeze(0).unsqueeze(0)
         n = torch.normal(
