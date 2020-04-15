@@ -2,6 +2,7 @@
 
 import os
 import librosa
+import random
 import torch
 import numpy as np
 
@@ -38,7 +39,9 @@ def generate_data():
                 F0_dict[current_label] = np.array(F0_dict[current_label])
 
     F0_segments = []
-    for utt_label in sorted(F0_dict.keys()):
+    keys = list(F0_dict.keys())
+    random.shuffle(keys)
+    for utt_label in sorted(keys):
         F0 = F0_dict[utt_label]
         # align with the segment
         n_segments = int(ceil(F0.size / context_length))
@@ -68,7 +71,7 @@ def main():
     model.load_state_dict(torch.load(statedict_path))
 
     x = next(generate_data())
-    y_pred = model(x).squeeze(-1).detach().numpy().reshape(batch_size*waveform_length)
+    y_pred = model(x).detach().numpy().reshape(batch_size*waveform_length)
     librosa.output.write_wav('arai_fake.wav', y_pred, sr=sampling_rate)
 
 if __name__ == '__main__':

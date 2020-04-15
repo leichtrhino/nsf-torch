@@ -25,15 +25,15 @@ class ConditionModule(torch.nn.Module):
         x = torch.tanh(self.cnn(x.permute(0, 2, 1)).permute(0, 2, 1))
         return torch.cat((F0, x), dim=-1)
 
-# input: NxBx1
-# output: NxTx1
+# input: NxB
+# output: NxT
 class SourceModule(torch.nn.Module):
     def __init__(self, waveform_length):
         super(SourceModule, self).__init__()
         self.sine_generator = SineGenerator(waveform_length)
         self.linear = torch.nn.Linear(8, 1)
-    def forward(self, x):
-        x = self.sine_generator(x)
+    def forward(self, x, y=None):
+        x = self.sine_generator(x, y)
         x = torch.tanh(self.linear(x))
         return torch.squeeze(x, -1)
 
@@ -90,7 +90,7 @@ class NeuralFilterModule(torch.nn.Module):
         # x: signal tensor from previous module
         # c: context tensor
         x_in = x
-        x = torch.tanh(self.causal_linear(x))
+        x = torch.tanh(self.causal_linear(x.unsqueeze(-1)))
         outputs_from_blocks = []
         ysum = 0
         for blk in self.dilute_blocks:
@@ -107,4 +107,4 @@ class NeuralFilterModule(torch.nn.Module):
                 self.postoutput_linear2(x).transpose(1, 2)
             ).transpose(1, 2)
         )
-        return x_in * torch.exp(x[:, :, 1].unsqueeze(-1)) + x[:, :, 0].unsqueeze(-1)
+        return x_in * torch.exp(x[:, :, 1]) + x[:, :, 0]

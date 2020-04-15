@@ -10,9 +10,9 @@ from modules import SourceModule
 from losses import spectral_amplitude_distance, phase_distance
 
 def main():
-    # unsqueeze to make 1x16x1 tensor
+    # unsqueeze to make 1x16 tensor
     waveform_length = 32000
-    x = torch.cat((440 * torch.ones(8000),)).unsqueeze(-1).unsqueeze(0)
+    x = torch.cat((440 * torch.ones(8000),)).unsqueeze(0)
     coeff, bias = torch.randn(8), torch.randn(1)
     y = torch.sum(coeff * SineGenerator(waveform_length)(x), -1) + bias
 
@@ -22,8 +22,7 @@ def main():
     criterion = lambda y_pred, y: Ls(y_pred, y) + Lp(y_pred, y)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
     for t in range(501):
-        model.sine_generator.natural_waveforms = y
-        y_pred = model(x)
+        y_pred = model(x, y)
 
         # Compute and print loss
         loss = criterion(y_pred, y)

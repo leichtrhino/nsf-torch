@@ -8,10 +8,10 @@ import librosa.display
 from layers import SineGenerator
 
 def main():
-    # unsqueeze to make 1x16x1 tensor
+    # unsqueeze to make 1x16 tensor
     x = torch.cat(
         (torch.zeros(6), 220 * torch.ones(5), 440 * torch.ones(5))
-    ).unsqueeze(-1).unsqueeze(0)
+    ).unsqueeze(0)
     siggen = SineGenerator(160000)
     y = siggen(x)
 
