@@ -22,8 +22,7 @@ def main():
     criterion = lambda y_pred, y: Ls(y_pred, y) + Lp(y_pred, y)
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
     for t in range(501):
-        model.sine_generator.natural_waveforms = y
-        y_pred = model(x)
+        y_pred = model(x, y)
 
         # Compute and print loss
         loss = criterion(y_pred, y)

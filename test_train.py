@@ -22,12 +22,9 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
 
     for t in range(101):
-        # TODO: mark deprecated
-        model.source_module.sine_generator.natural_waveforms = y
-        y_pred = model(x)
+        y_pred = model(x, y) # give y to estimate the initial phase
 
         # Compute and print loss
-        # TODO: match dimension
         loss = criterion(y_pred, y)
         if t % 10 == 0:
             print(t, loss.item())

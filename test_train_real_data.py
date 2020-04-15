@@ -116,9 +116,7 @@ def main():
         sum_loss = 0
         last_output_len = 0
         for step, (x, y) in enumerate(generate_data()):
-            # TODO: mark deprecated
-            model.source_module.sine_generator.natural_waveforms = y
-            y_pred = model(x)
+            y_pred = model(x, y) # give y to estimate the initial phase
 
             # Compute loss
             loss = criterion(y_pred, y)
